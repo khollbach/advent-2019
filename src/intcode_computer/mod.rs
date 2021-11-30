@@ -72,6 +72,22 @@ impl IntcodeComputer {
             Output => {
                 self.output.as_mut().unwrap()(args[0]);
             }
+            JumpIfTrue => {
+                if args[0] != 0 {
+                    self.ip = args[1] as usize;
+                }
+            }
+            JumpIfFalse => {
+                if args[0] == 0 {
+                    self.ip = args[1] as usize;
+                }
+            }
+            LessThan => {
+                self.memory[args[2] as usize] = (args[0] < args[1]) as i32;
+            }
+            Equals => {
+                self.memory[args[2] as usize] = (args[0] == args[1]) as i32;
+            }
             Halt => {
                 return false;
             }

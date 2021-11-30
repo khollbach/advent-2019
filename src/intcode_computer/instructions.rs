@@ -7,8 +7,15 @@ use ParameterType::*;
 pub enum Operation {
     Add,
     Mul,
+
     Input,
     Output,
+
+    JumpIfTrue,
+    JumpIfFalse,
+    LessThan,
+    Equals,
+
     Halt,
 }
 
@@ -21,6 +28,10 @@ impl Operation {
             2 => Mul,
             3 => Input,
             4 => Output,
+            5 => JumpIfTrue,
+            6 => JumpIfFalse,
+            7 => LessThan,
+            8 => Equals,
             99 => Halt,
             _ => panic!("Invalid opcode: {}", opcode),
         }
@@ -32,6 +43,10 @@ impl Operation {
             Mul => vec![Read, Read, Write],
             Input => vec![Write],
             Output => vec![Read],
+            JumpIfTrue => vec![Read, Read],
+            JumpIfFalse => vec![Read, Read],
+            LessThan => vec![Read, Read, Write],
+            Equals => vec![Read, Read, Write],
             Halt => vec![],
         }
     }
