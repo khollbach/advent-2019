@@ -32,7 +32,7 @@ fn fuel_required_recursive(mass: u32) -> u32 {
 
     if fuel > 0 {
         fuel + fuel_required_recursive(fuel)
-    }  else {
+    } else {
         0
     }
 }
