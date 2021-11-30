@@ -12,5 +12,5 @@ fn solve(part_number: i64, prog: Vec<i64>) {
     assert!(part_number == 1 || part_number == 2);
 
     let mut cpu = IntcodeComputer::new(prog);
-    cpu.run_io(Box::new(move || part_number), Box::new(|x| println!("{}", x)));
+    cpu.run_io(&mut move || part_number, &mut |x| println!("{}", x));
 }

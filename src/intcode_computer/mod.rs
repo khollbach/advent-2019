@@ -14,10 +14,10 @@ pub fn read_intcode_program(input: impl BufRead) -> Vec<i64> {
     line.split(',').map(|word| word.parse().unwrap()).collect()
 }
 
-type In = Box<dyn FnMut() -> i64>;
-type Out = Box<dyn FnMut(i64)>;
+type In<'a> = &'a mut dyn FnMut() -> i64;
+type Out<'a> = &'a mut dyn FnMut(i64);
 
-pub struct IntcodeComputer {
+pub struct IntcodeComputer<'a> {
     /// Instruction pointer.
     ip: i64,
     /// Relative base.
@@ -25,11 +25,11 @@ pub struct IntcodeComputer {
 
     memory: Memory,
 
-    input: Option<In>,
-    output: Option<Out>,
+    input: Option<In<'a>>,
+    output: Option<Out<'a>>,
 }
 
-impl IntcodeComputer {
+impl<'a> IntcodeComputer<'a> {
     pub fn new(program: Vec<i64>) -> Self {
         Self {
             ip: 0,
@@ -49,7 +49,7 @@ impl IntcodeComputer {
         self.memory[0]
     }
 
-    pub fn run_io(&mut self, input: In, output: Out) {
+    pub fn run_io(&mut self, input: In<'a>, output: Out<'a>) {
         self.input = Some(input);
         self.output = Some(output);
 
@@ -138,7 +138,7 @@ impl IntcodeComputer {
     }
 }
 
-impl fmt::Debug for IntcodeComputer {
+impl<'a> fmt::Debug for IntcodeComputer<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ip={} rb={} mem={:?}", self.ip, self.rb, self.memory)
     }
