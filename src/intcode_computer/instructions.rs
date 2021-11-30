@@ -16,6 +16,8 @@ pub enum Operation {
     LessThan,
     Equals,
 
+    AdjustRelBase,
+
     Halt,
 }
 
@@ -32,6 +34,7 @@ impl Operation {
             6 => JumpIfFalse,
             7 => LessThan,
             8 => Equals,
+            9 => AdjustRelBase,
             99 => Halt,
             _ => panic!("Invalid opcode: {}", opcode),
         }
@@ -47,6 +50,7 @@ impl Operation {
             JumpIfFalse => vec![Read, Read],
             LessThan => vec![Read, Read, Write],
             Equals => vec![Read, Read, Write],
+            AdjustRelBase => vec![Read],
             Halt => vec![],
         }
     }
@@ -60,14 +64,16 @@ pub enum ParameterType {
 pub enum ParameterMode {
     Position,
     Immediate,
+    Relative,
 }
 
 impl ParameterMode {
-    fn new(bit: i64) -> Self {
-        match bit {
+    fn new(digit: i64) -> Self {
+        match digit {
             0 => Position,
             1 => Immediate,
-            _ => panic!("Invalid parameter mode bit: {}", bit),
+            2 => Relative,
+            _ => panic!("Invalid parameter mode digit: {}", digit),
         }
     }
 
@@ -75,13 +81,13 @@ impl ParameterMode {
     pub fn parse_opcode(opcode: i64) -> impl Iterator<Item = Self> {
         assert!(opcode >= 0);
 
-        let mut bits = opcode / 100;
+        let mut digits = opcode / 100;
 
         iter::repeat_with(move || {
-            let bit = bits % 10;
-            bits /= 10;
+            let d = digits % 10;
+            digits /= 10;
 
-            Self::new(bit)
+            Self::new(d)
         })
     }
 }
