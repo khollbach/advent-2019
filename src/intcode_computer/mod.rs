@@ -3,7 +3,7 @@ use std::io::BufRead;
 
 mod instructions;
 
-pub fn read_intcode_program(input: impl BufRead) -> Vec<i32> {
+pub fn read_intcode_program(input: impl BufRead) -> Vec<i64> {
     let mut lines = input.lines();
     let line = lines.next().unwrap().unwrap();
     assert!(lines.next().is_none());
@@ -11,20 +11,20 @@ pub fn read_intcode_program(input: impl BufRead) -> Vec<i32> {
     line.split(',').map(|word| word.parse().unwrap()).collect()
 }
 
-type In = Box<dyn FnMut() -> i32>;
-type Out = Box<dyn FnMut(i32)>;
+type In = Box<dyn FnMut() -> i64>;
+type Out = Box<dyn FnMut(i64)>;
 
 pub struct IntcodeComputer {
     /// Instruction pointer.
     ip: usize,
-    memory: Vec<i32>,
+    memory: Vec<i64>,
 
     input: Option<In>,
     output: Option<Out>,
 }
 
 impl IntcodeComputer {
-    pub fn new(program: Vec<i32>) -> Self {
+    pub fn new(program: Vec<i64>) -> Self {
         Self {
             ip: 0,
             memory: program,
@@ -33,7 +33,7 @@ impl IntcodeComputer {
         }
     }
 
-    pub fn run_noun_verb(&mut self, noun: i32, verb: i32) -> i32 {
+    pub fn run_noun_verb(&mut self, noun: i64, verb: i64) -> i64 {
         self.memory[1] = noun;
         self.memory[2] = verb;
 
@@ -83,10 +83,10 @@ impl IntcodeComputer {
                 }
             }
             LessThan => {
-                self.memory[args[2] as usize] = (args[0] < args[1]) as i32;
+                self.memory[args[2] as usize] = (args[0] < args[1]) as i64;
             }
             Equals => {
-                self.memory[args[2] as usize] = (args[0] == args[1]) as i32;
+                self.memory[args[2] as usize] = (args[0] == args[1]) as i64;
             }
             Halt => {
                 return false;
@@ -97,7 +97,7 @@ impl IntcodeComputer {
     }
 
     /// Updates the instruction pointer accordingly.
-    fn read_instruction(&mut self) -> (Operation, Vec<i32>) {
+    fn read_instruction(&mut self) -> (Operation, Vec<i64>) {
         let opcode = self.memory[self.ip];
         self.ip += 1;
 

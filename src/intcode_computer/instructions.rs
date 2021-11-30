@@ -20,7 +20,7 @@ pub enum Operation {
 }
 
 impl Operation {
-    pub fn new(opcode: i32) -> Self {
+    pub fn new(opcode: i64) -> Self {
         assert!(opcode >= 0);
 
         match opcode % 100 {
@@ -63,7 +63,7 @@ pub enum ParameterMode {
 }
 
 impl ParameterMode {
-    fn new(bit: i32) -> Self {
+    fn new(bit: i64) -> Self {
         match bit {
             0 => Position,
             1 => Immediate,
@@ -72,7 +72,7 @@ impl ParameterMode {
     }
 
     /// Infinite iterator of parameter modes.
-    pub fn parse_opcode(opcode: i32) -> impl Iterator<Item = Self> {
+    pub fn parse_opcode(opcode: i64) -> impl Iterator<Item = Self> {
         assert!(opcode >= 0);
 
         let mut bits = opcode / 100;

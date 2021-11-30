@@ -11,11 +11,11 @@ pub fn main() {
     println!("{}", noun * 100 + verb);
 }
 
-fn part_1(nums: Vec<i32>) -> i32 {
+fn part_1(nums: Vec<i64>) -> i64 {
     IntcodeComputer::new(nums).run_noun_verb(12, 2)
 }
 
-fn part_2(nums: Vec<i32>) -> (i32, i32) {
+fn part_2(nums: Vec<i64>) -> (i64, i64) {
     for noun in 0..100 {
         for verb in 0..100 {
             let mut cpu = IntcodeComputer::new(nums.clone());
