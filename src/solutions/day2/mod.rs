@@ -12,43 +12,58 @@ fn read_input(input: impl BufRead) -> Vec<u32> {
 pub fn main() {
     let nums = read_input(io::stdin().lock());
 
-    let ans = part_1(nums);
+    let ans = part_1(nums.clone());
     println!("{}", ans);
+
+    let (noun, verb) = part_2(nums);
+    println!("{}", noun * 100 + verb);
 }
 
 fn part_1(nums: Vec<u32>) -> u32 {
-    let mut cpu = IntcodeComputer::new(nums);
-    cpu.memory[1] = 12;
-    cpu.memory[2] = 2;
-    cpu.run();
-    cpu.memory[0]
+    IntcodeComputer::new(nums).run(12, 2)
+}
+
+fn part_2(nums: Vec<u32>) -> (u32, u32) {
+    for noun in 0..100 {
+        for verb in 0..100 {
+            let mut cpu = IntcodeComputer::new(nums.clone());
+            if cpu.run(noun, verb) == 1969_07_20 {
+                return (noun, verb);
+            }
+        }
+    }
+
+    panic!("No noun/verb pair found.");
 }
 
 struct IntcodeComputer {
-    /// "Program counter" a.k.a. instruction pointer.
-    pc: usize,
+    /// Instruction pointer.
+    ip: usize,
     memory: Vec<u32>,
 }
 
 impl IntcodeComputer {
     fn new(program: Vec<u32>) -> Self {
-        Self { pc: 0, memory: program }
+        Self { ip: 0, memory: program }
     }
 
-    fn run(&mut self) {
+    fn run(&mut self, noun: u32, verb: u32) -> u32 {
+        self.memory[1] = noun;
+        self.memory[2] = verb;
         while self.step() {}
+        self.memory[0]
     }
 
     /// Execute the current instruction and bump the program counter.
     /// Return false if the cpu should halt.
     fn step(&mut self) -> bool {
-        let opcode = self.memory[self.pc];
+        let opcode = self.memory[self.ip];
         if opcode == 99 { return false; }
 
         // Addresses.
-        let a = self.memory[self.pc + 1] as usize;
-        let b = self.memory[self.pc + 2] as usize;
-        let c = self.memory[self.pc + 3] as usize;
+        let a = self.memory[self.ip + 1] as usize;
+        let b = self.memory[self.ip + 2] as usize;
+        let c = self.memory[self.ip + 3] as usize;
 
         // Values.
         let x = self.memory[a];
@@ -60,7 +75,7 @@ impl IntcodeComputer {
             _ => panic!("Invalid opcode: {}", opcode),
         };
 
-        self.pc += 4;
+        self.ip += 4;
 
         true
     }
