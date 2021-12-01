@@ -30,7 +30,7 @@ fn main() {
         }
     };
 
-    aoc_2019::solve(day);
+    advent_2019::solve(day);
 }
 
 fn eprint_usage(prog_name: &str) {
