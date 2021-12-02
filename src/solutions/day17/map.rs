@@ -1,121 +1,93 @@
 use std::fmt;
-use crate::intcode_computer::IntcodeComputer;
-use Tile::*;
+use std::ops::Index;
+use crate::solutions::day17::map::geometry::{Dir, Point, DIRS};
+use crate::solutions::day17::map::Tile::{Water, Land};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-enum Tile {
-    Water,
-    Land,
+mod build_map;
+mod geometry;
+mod part_1;
+mod part_2;
+
+pub use build_map::build_map;
+pub use part_2::Step;
+
+#[derive(Debug, Copy, Clone)]
+pub struct Robot {
+    dir: Dir,
+    pos: Point,
 }
 
 pub struct Map {
     grid: Vec<Vec<Tile>>,
-    robot: Option<(usize, usize)>,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Tile {
+    Water,
+    Land,
 }
 
 impl Map {
-    pub fn new(ascii_prog: Vec<i64>) -> Self {
-        let mut map = Self {
-            grid: vec![vec![]],
-            robot: None,
-        };
+    fn dims(&self) -> Point {
+        let row = self.grid.len() as isize;
+        let col = self.grid[0].len() as isize;
 
-        let mut input = || panic!();
-        let mut output = |x| {
-            assert!(0 <= x && x < 256);
-            map.update(x as u8 as char);
-        };
-
-        let mut cpu = IntcodeComputer::new(ascii_prog);
-        cpu.run_io(&mut input, &mut output);
-
-        map.finish();
-        map
+        Point { row, col }
     }
 
-    /// Helper function for Map::new.
-    fn update(&mut self, c: char) {
-        match c {
-            '\n' => {
-                // New row.
-                self.grid.push(vec![]);
-            }
-            '.' => {
-                self.grid.last_mut().unwrap().push(Water);
-            }
-            _ => {
-                assert!("#^v<>".contains(c));
-                self.grid.last_mut().unwrap().push(Land);
+    fn in_range(&self, p: Point) -> bool {
+        in_range(p, self.dims())
+    }
 
-                // We found the robot.
-                if c != '#' {
-                    assert!(self.robot.is_none());
-                    let i = self.grid.len();
-                    let j = self.grid.last().unwrap().len();
-                    self.robot = Some((i, j));
-                    // robot = Some(Robot::new(c, i, j)); // todo: directions and stuff, probably
-                }
-            }
+    fn get(&self, p: Point) -> Option<Tile> {
+        if self.in_range(p) {
+            Some(self[p])
+        } else {
+            None
         }
     }
 
-    /// Helper function for Map::new.
-    ///
-    /// Account for trailing newlines by popping empty rows.
-    ///
-    /// Panics if the final grid is empty or jagged.
-    fn finish(&mut self) {
-        while self.grid.last() == Some(&vec![]) {
-            self.grid.pop();
-        }
+    fn all_points(&self) -> impl Iterator<Item=Point> {
+        let Point { row, col } = self.dims();
 
-        // Is the grid empty?
-        let row_len = self.grid[0].len();
-        assert_ne!(row_len, 0);
-
-        // Jagged?
-        assert!(self.grid.iter().all(|row| row.len() == row_len));
-    }
-
-    pub fn intersections<'a>(&'a self) -> impl Iterator<Item=(usize, usize)> + 'a {
-        self.all_points().filter(|&(i, j)| self.is_intersection(i, j))
-    }
-
-    fn all_points(&self) -> impl Iterator<Item=(usize, usize)> {
-        let num_rows = self.grid.len();
-        let num_cols = self.grid[0].len();
-
-        (0..num_rows).flat_map(move |i| {
-            (0..num_cols).map(move |j| {
-                (i, j)
+        (0..row).flat_map(move |row| {
+            (0..col).map(move |col| {
+                Point { row, col }
             })
         })
     }
 
-    fn is_intersection(&self, i: usize, j: usize) -> bool {
-        let num_adj_land = self.neighbors(i, j).filter(|&(i2, j2)| self.grid[i2][j2] == Land).count();
+    fn neighbors(&self, p: Point) -> impl Iterator<Item=Point> {
+        let dims = self.dims();
 
-        self.grid[i][j] == Land && num_adj_land >= 3
+        DIRS.into_iter().map(move |dir| p + dir.to_point()).filter(move |&p2| in_range(p2, dims))
     }
+}
 
-    fn neighbors(&self, i: usize, j: usize) -> impl Iterator<Item=(usize, usize)> {
-        let num_rows = self.grid.len() as isize;
-        let num_cols = self.grid[0].len() as isize;
+fn in_range(p: Point, dims: Point) -> bool {
+    0 <= p.row && p.row < dims.row &&
+        0 <= p.col && p.col < dims.col
+}
 
-        let dirs = [(-1, 0), (1, 0), (0, -1), (0, 1)];
+impl Index<Point> for Map {
+    type Output = Tile;
 
-        dirs.into_iter().filter_map(move |(di, dj)| {
-            let i2 = i as isize + di;
-            let j2 = j as isize + dj;
+    fn index(&self, p: Point) -> &Tile {
+        let row: usize = p.row.try_into().unwrap();
+        let col: usize = p.col.try_into().unwrap();
 
-            if 0 <= i2 && i2 < num_rows &&
-                0 <= j2 && j2 < num_cols
-            {
-                Some((i2 as usize, j2 as usize))
-            } else {
-                None
-            }
-        })
+        &self.grid[row][col]
+    }
+}
+
+impl fmt::Debug for Map {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for row in &self.grid {
+            let s: String = row.iter().copied().map(Tile::to_char).collect();
+            writeln!(f, "{}", s)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -125,16 +97,5 @@ impl Tile {
             Water => '.',
             Land => '#',
         }
-    }
-}
-
-impl fmt::Debug for Map {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "robot={:?}", self.robot)?; // todo: show on map, with proper direction
-        for row in &self.grid {
-            let s: String = row.iter().copied().map(Tile::to_char).collect();
-            writeln!(f, "{}", s)?;
-        }
-        Ok(())
     }
 }
