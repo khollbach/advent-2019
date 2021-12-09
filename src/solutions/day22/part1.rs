@@ -1,33 +1,18 @@
-use std::io;
-use crate::solutions::day22::input::read_input;
-use crate::solutions::day22::Technique::{Cut, Deal, Reverse};
-
-mod input;
-
-pub fn main() {
-    let shuffle = read_input(io::stdin().lock());
-
-    println!("{}", part_1(shuffle));
-}
+use crate::solutions::day22::input::Technique;
+use crate::solutions::day22::input::Technique::{Cut, Deal, Reverse};
 
 const DECK_SIZE: u32 = 10_007;
 const TARGET_CARD: u32 = 2019;
 
-fn part_1(shuffle: Vec<Technique>) -> usize {
+pub fn part_1(shuffle: &[Technique]) -> usize {
     let cards = (0..DECK_SIZE).collect();
     let mut deck = Deck { cards };
 
-    for technique in shuffle {
+    for &technique in shuffle {
         deck.apply(technique);
     }
 
     deck.cards.into_iter().position(|c| c == TARGET_CARD).unwrap()
-}
-
-pub enum Technique {
-    Reverse,
-    Cut(isize),
-    Deal(usize),
 }
 
 #[derive(Debug)]
