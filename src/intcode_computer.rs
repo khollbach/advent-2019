@@ -14,8 +14,8 @@ pub fn read_intcode_program(input: impl BufRead) -> Vec<i64> {
     line.split(',').map(|word| word.parse().unwrap()).collect()
 }
 
-type In<'a> = &'a mut dyn FnMut() -> i64;
-type Out<'a> = &'a mut dyn FnMut(i64);
+type In<'a> = &'a mut (dyn FnMut() -> i64 + Send);
+type Out<'a> = &'a mut (dyn FnMut(i64) + Send);
 
 pub struct IntcodeComputer<'a> {
     /// Instruction pointer.
