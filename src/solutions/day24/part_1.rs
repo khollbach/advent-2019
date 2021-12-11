@@ -1,30 +1,7 @@
-use std::io;
 use std::collections::HashSet;
-use std::io::BufRead;
+use crate::solutions::day24::{Grid, should_live};
 
-fn read_input(input: impl BufRead) -> Grid {
-    let grid: Vec<_> = input.lines().map(|line| {
-        let row: Vec<_> = line.unwrap().chars().map(|c| match c {
-            '.' => false,
-            '#' => true,
-            _ => panic!("Invalid cell character: {}", c),
-        }).collect();
-
-        // Into an array.
-        row.try_into().unwrap()
-    }).collect();
-
-    // Into an array of arrays.
-    Grid { grid: grid.try_into().unwrap() }
-}
-
-pub fn main() {
-    let grid = read_input(io::stdin().lock());
-
-    println!("{}", part_1(grid).biodiversity_rating());
-}
-
-fn part_1(grid: Grid) -> Grid {
+pub fn solve(grid: Grid) -> u32 {
     let mut seen = HashSet::new();
 
     let mut curr = grid;
@@ -32,20 +9,14 @@ fn part_1(grid: Grid) -> Grid {
         seen.insert(curr.clone());
         curr.transform();
     }
-    curr
-}
-
-#[derive(Debug, Default, Clone, Hash, Eq, PartialEq)]
-struct Grid {
-    /// True for bug, false for empty.
-    grid: [[bool; Grid::SIZE]; Grid::SIZE],
+    curr.biodiversity_rating()
 }
 
 impl Grid {
-    const SIZE: usize = 5;
+    pub const SIZE: usize = 5;
 
     fn transform(&mut self) {
-        let mut tmp = Grid::default();
+        let mut tmp = Self::default();
 
         for i in 0..Self::SIZE {
             for j in 0..Self::SIZE {
@@ -60,11 +31,7 @@ impl Grid {
         let is_bug = self.grid[i][j];
         let num_adj = Self::neighbors(i, j).filter(|&(i2, j2)| self.grid[i2][j2]).count();
 
-        if is_bug {
-            num_adj == 1
-        } else {
-            num_adj == 1 || num_adj == 2
-        }
+        should_live(is_bug, num_adj)
     }
 
     fn neighbors(i: usize, j: usize) -> impl Iterator<Item=(usize, usize)> {
