@@ -17,8 +17,7 @@ pub fn build_map(ascii_prog: Vec<i64>) -> (Map, Robot) {
         builder.update(x as u8 as char);
     };
 
-    let mut cpu = IntcodeComputer::new(ascii_prog);
-    cpu.run_io(&mut input, &mut output);
+    IntcodeComputer::new(ascii_prog).io(&mut input, &mut output).run();
 
     builder.finish()
 }

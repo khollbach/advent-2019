@@ -14,10 +14,10 @@ pub fn read_intcode_program(input: impl BufRead) -> Vec<i64> {
     line.split(',').map(|word| word.parse().unwrap()).collect()
 }
 
-type In<'a> = &'a mut (dyn FnMut() -> i64 + Send);
-type Out<'a> = &'a mut (dyn FnMut(i64) + Send);
+type Input<'a> = &'a mut (dyn FnMut() -> i64 + Send);
+type Output<'a> = &'a mut (dyn FnMut(i64) + Send);
 
-pub struct IntcodeComputer<'a> {
+pub struct IntcodeComputer<'i, 'o> {
     /// Instruction pointer.
     ip: i64,
     /// Relative base.
@@ -25,11 +25,11 @@ pub struct IntcodeComputer<'a> {
 
     memory: Memory,
 
-    input: Option<In<'a>>,
-    output: Option<Out<'a>>,
+    input: Option<Input<'i>>,
+    output: Option<Output<'o>>,
 }
 
-impl<'a> IntcodeComputer<'a> {
+impl<'i, 'o> IntcodeComputer<'i, 'o> {
     pub fn new(program: Vec<i64>) -> Self {
         Self {
             ip: 0,
@@ -44,19 +44,29 @@ impl<'a> IntcodeComputer<'a> {
         self.memory[1] = noun;
         self.memory[2] = verb;
 
-        self.run();
+        self.run_inner();
 
         self.memory[0]
     }
 
-    pub fn run_io(&mut self, input: In<'a>, output: Out<'a>) {
-        self.input = Some(input);
-        self.output = Some(output);
-
-        self.run();
+    /// Set input and output.
+    pub fn io<'i2, 'o2>(self, input: Input<'i2>, output: Output<'o2>) -> IntcodeComputer<'i2, 'o2> {
+        // The borrow checker doesn't like `IntcodeComputer { input, output, ..self }`,
+        // otherwise we'd just write that.
+        IntcodeComputer {
+            ip: self.ip,
+            rb: self.rb,
+            memory: self.memory,
+            input: Some(input),
+            output: Some(output),
+        }
     }
 
-    fn run(&mut self) {
+    pub fn run(mut self) {
+        self.run_inner();
+    }
+
+    fn run_inner(&mut self) {
         while self.step() {}
     }
 
@@ -138,7 +148,7 @@ impl<'a> IntcodeComputer<'a> {
     }
 }
 
-impl<'a> fmt::Debug for IntcodeComputer<'a> {
+impl fmt::Debug for IntcodeComputer<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ip={} rb={} mem={:?}", self.ip, self.rb, self.memory)
     }

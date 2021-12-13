@@ -41,8 +41,7 @@ impl Grid {
                     }
                 };
 
-                let mut cpu = IntcodeComputer::new(prog.clone());
-                cpu.run_io(&mut || input.next().unwrap(), &mut output);
+                IntcodeComputer::new(prog.clone()).io(&mut || input.next().unwrap(), &mut output).run();
             }
         }
 

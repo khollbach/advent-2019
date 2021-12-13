@@ -88,8 +88,7 @@ fn part_2_answer(mut ascii_prog: Vec<i64>, print_output: bool) -> i64 {
     let mut output_buf = String::new();
     let mut ans = None;
 
-    let mut cpu = IntcodeComputer::new(ascii_prog);
-    cpu.run_io(
+    IntcodeComputer::new(ascii_prog).io(
         &mut || input.next().unwrap() as i64,
         &mut |x| {
             if 0 <= x && x < 256 {
@@ -112,7 +111,7 @@ fn part_2_answer(mut ascii_prog: Vec<i64>, print_output: bool) -> i64 {
                 ans = Some(x);
             }
         }
-    );
+    ).run();
 
     // Any remaining output?
     if print_output {

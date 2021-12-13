@@ -31,7 +31,6 @@ OR T J
 pub fn main() {
     let input = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/inputs/21"));
     let prog = read_intcode_program(BufReader::new(input.as_bytes()));
-    let mut cpu = IntcodeComputer::new(prog);
 
     let mut input_buf = VecDeque::new();
     let mut input = || {
@@ -55,5 +54,5 @@ pub fn main() {
         }
     };
 
-    cpu.run_io(&mut input, &mut output);
+    IntcodeComputer::new(prog).io(&mut input, &mut output).run();
 }
