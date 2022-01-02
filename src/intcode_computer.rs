@@ -1,23 +1,24 @@
 use std::fmt;
-use instructions::{Operation, ParameterMode, ParameterType};
 use std::io::BufRead;
+use itertools::Itertools;
 use mem::Memory;
+use instructions::{Operation, ParameterMode, ParameterType};
+use Operation::{Add, Mul, Input, Output, JumpIfTrue, JumpIfFalse, LessThan, Equals, AdjustRelBase, Halt};
+use ParameterType::{Read, Write};
+use ParameterMode::{Position, Immediate, Relative};
 
 mod mem;
 mod instructions;
 
 pub fn read_intcode_program(input: impl BufRead) -> Vec<i64> {
-    let mut lines = input.lines();
-    let line = lines.next().unwrap().unwrap();
-    assert!(lines.next().is_none());
+    let (line,) = input.lines().map(Result::unwrap).collect_tuple().unwrap();
 
-    line.split(',').map(|word| word.parse().unwrap()).collect()
+    line.split(',').map(|n| {
+        n.parse().unwrap()
+    }).collect()
 }
 
-type Input<'a> = &'a mut (dyn FnMut() -> i64 + Send);
-type Output<'a> = &'a mut (dyn FnMut(i64) + Send);
-
-pub struct IntcodeComputer<'i, 'o> {
+pub struct IntcodeComputer<I=fn() -> i64, O=fn(i64)> {
     /// Instruction pointer.
     ip: i64,
     /// Relative base.
@@ -25,13 +26,13 @@ pub struct IntcodeComputer<'i, 'o> {
 
     memory: Memory,
 
-    input: Option<Input<'i>>,
-    output: Option<Output<'o>>,
+    input: Option<I>,
+    output: Option<O>,
 }
 
-impl<'i, 'o> IntcodeComputer<'i, 'o> {
+impl IntcodeComputer {
     pub fn new(program: Vec<i64>) -> Self {
-        Self {
+        IntcodeComputer {
             ip: 0,
             rb: 0,
             memory: Memory::new(program),
@@ -40,18 +41,9 @@ impl<'i, 'o> IntcodeComputer<'i, 'o> {
         }
     }
 
-    pub fn run_noun_verb(&mut self, noun: i64, verb: i64) -> i64 {
-        self.memory[1] = noun;
-        self.memory[2] = verb;
-
-        self.run_inner();
-
-        self.memory[0]
-    }
-
     /// Set input and output.
-    pub fn io<'i2, 'o2>(self, input: Input<'i2>, output: Output<'o2>) -> IntcodeComputer<'i2, 'o2> {
-        // The borrow checker doesn't like `IntcodeComputer { input, output, ..self }`,
+    pub fn io<I, O>(self, input: I, output: O) -> IntcodeComputer<I, O> {
+        // The compiler doesn't like `IntcodeComputer { input, output, ..self }`,
         // otherwise we'd just write that.
         IntcodeComputer {
             ip: self.ip,
@@ -61,9 +53,24 @@ impl<'i, 'o> IntcodeComputer<'i, 'o> {
             output: Some(output),
         }
     }
+}
 
+impl<I, O> IntcodeComputer<I, O>
+where
+    I: FnMut() -> i64,
+    O: FnMut(i64),
+{
     pub fn run(mut self) {
         self.run_inner();
+    }
+
+    pub fn run_noun_verb(mut self, noun: i64, verb: i64) -> i64 {
+        self.memory[1] = noun;
+        self.memory[2] = verb;
+
+        self.run_inner();
+
+        self.memory[0]
     }
 
     fn run_inner(&mut self) {
@@ -75,7 +82,6 @@ impl<'i, 'o> IntcodeComputer<'i, 'o> {
     fn step(&mut self) -> bool {
         let (op, args) = self.read_instruction();
 
-        use Operation::*;
         match op {
             Add => {
                 self.memory[args[2]] = args[0] + args[1];
@@ -116,6 +122,10 @@ impl<'i, 'o> IntcodeComputer<'i, 'o> {
         true
     }
 
+    /// Returns an operation and its list of arguments.
+    ///
+    /// Read-parameter arguments are values, and write-parameter arguments are addresses.
+    ///
     /// Updates the instruction pointer accordingly.
     fn read_instruction(&mut self) -> (Operation, Vec<i64>) {
         let opcode = self.memory[self.ip];
@@ -129,8 +139,6 @@ impl<'i, 'o> IntcodeComputer<'i, 'o> {
             let a = self.memory[self.ip];
             self.ip += 1;
 
-            use ParameterType::*;
-            use ParameterMode::*;
             match (type_, mode) {
                 (Read, Position) => self.memory[a],
                 (Read, Relative) => self.memory[a + self.rb],
@@ -148,7 +156,7 @@ impl<'i, 'o> IntcodeComputer<'i, 'o> {
     }
 }
 
-impl fmt::Debug for IntcodeComputer<'_, '_> {
+impl<I, O> fmt::Debug for IntcodeComputer<I, O> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ip={} rb={} mem={:?}", self.ip, self.rb, self.memory)
     }

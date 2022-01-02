@@ -11,13 +11,13 @@ pub fn build_map(ascii_prog: Vec<i64>) -> (Map, Robot) {
         robot: None,
     };
 
-    let mut input = || panic!();
-    let mut output = |x| {
+    let input = || panic!();
+    let output = |x| {
         assert!(0 <= x && x < 256);
         builder.update(x as u8 as char);
     };
 
-    IntcodeComputer::new(ascii_prog).io(&mut input, &mut output).run();
+    IntcodeComputer::new(ascii_prog).io(input, output).run();
 
     builder.finish()
 }

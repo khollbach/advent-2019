@@ -11,5 +11,5 @@ pub fn main() {
 fn solve(part_number: i64, prog: Vec<i64>) {
     assert!(part_number == 1 || part_number == 2);
 
-    IntcodeComputer::new(prog).io(&mut move || part_number, &mut |x| println!("{}", x)).run();
+    IntcodeComputer::new(prog).io(move || part_number, |x| println!("{}", x)).run();
 }

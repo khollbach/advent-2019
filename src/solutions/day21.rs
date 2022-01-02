@@ -33,7 +33,7 @@ pub fn main() {
     let prog = read_intcode_program(BufReader::new(input.as_bytes()));
 
     let mut input_buf = VecDeque::new();
-    let mut input = || {
+    let input = || {
         // Grab a line of input all-at-once from stdin.
         if input_buf.is_empty() {
             let mut buf = String::new();
@@ -46,7 +46,7 @@ pub fn main() {
         input_buf.pop_front().unwrap() as i64
     };
 
-    let mut output = |x| {
+    let output = |x| {
         if 0 <= x && x < 256 {
             print!("{}", x as u8 as char);
         } else {
@@ -54,5 +54,5 @@ pub fn main() {
         }
     };
 
-    IntcodeComputer::new(prog).io(&mut input, &mut output).run();
+    IntcodeComputer::new(prog).io(input, output).run();
 }

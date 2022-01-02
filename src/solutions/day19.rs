@@ -34,14 +34,14 @@ impl Grid {
         for i in 0..num_rows {
             for j in 0..num_cols {
                 let mut input = [i as i64, j as i64].into_iter();
-                let mut output = |x| {
+                let output = |x| {
                     debug_assert!(x == 0 || x == 1);
                     if x != 0 {
                         grid[i][j] = true;
                     }
                 };
 
-                IntcodeComputer::new(prog.clone()).io(&mut || input.next().unwrap(), &mut output).run();
+                IntcodeComputer::new(prog.clone()).io(|| input.next().unwrap(), output).run();
             }
         }
 

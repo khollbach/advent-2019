@@ -8,11 +8,17 @@ pub fn main() {
 }
 
 fn part_1(prog: Vec<i64>) {
-    IntcodeComputer::new(prog).io(&mut || 1, &mut |x| if x != 0 {
-        println!("{}", x)
-    }).run();
+    IntcodeComputer::new(prog).io(
+        || 1,
+        |x| if x != 0 {
+            println!("{}", x)
+        },
+    ).run();
 }
 
 fn part_2(prog: Vec<i64>) {
-    IntcodeComputer::new(prog).io(&mut || 5, &mut |x| println!("{}", x)).run();
+    IntcodeComputer::new(prog).io(
+        || 5,
+        |x| println!("{}", x),
+    ).run();
 }

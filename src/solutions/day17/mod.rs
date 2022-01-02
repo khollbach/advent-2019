@@ -89,8 +89,8 @@ fn part_2_answer(mut ascii_prog: Vec<i64>, print_output: bool) -> i64 {
     let mut ans = None;
 
     IntcodeComputer::new(ascii_prog).io(
-        &mut || input.next().unwrap() as i64,
-        &mut |x| {
+        || input.next().unwrap() as i64,
+        |x| {
             if 0 <= x && x < 256 {
                 let c = x as u8 as char;
 

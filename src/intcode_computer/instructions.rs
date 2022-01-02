@@ -1,7 +1,7 @@
 use std::iter;
-use Operation::*;
-use ParameterMode::*;
-use ParameterType::*;
+use Operation::{Add, Mul, Input, Output, JumpIfTrue, JumpIfFalse, LessThan, Equals, AdjustRelBase, Halt};
+use ParameterType::{Read, Write};
+use ParameterMode::{Position, Immediate, Relative};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Operation {
@@ -78,7 +78,7 @@ impl ParameterMode {
     }
 
     /// Infinite iterator of parameter modes.
-    pub fn parse_opcode(opcode: i64) -> impl Iterator<Item = Self> {
+    pub fn parse_opcode(opcode: i64) -> impl Iterator<Item=Self> {
         assert!(opcode >= 0);
 
         let mut digits = opcode / 100;

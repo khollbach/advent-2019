@@ -18,8 +18,7 @@ fn part_1(nums: Vec<i64>) -> i64 {
 fn part_2(nums: Vec<i64>) -> (i64, i64) {
     for noun in 0..100 {
         for verb in 0..100 {
-            let mut cpu = IntcodeComputer::new(nums.clone());
-            if cpu.run_noun_verb(noun, verb) == 1969_07_20 {
+            if IntcodeComputer::new(nums.clone()).run_noun_verb(noun, verb) == 1969_07_20 {
                 return (noun, verb);
             }
         }
