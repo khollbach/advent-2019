@@ -57,28 +57,43 @@ impl CPU {
         move || {
             let mut self_ = self_.borrow_mut();
 
+            // First input instruction is always the CPU's own id.
             if let Some(id) = id.take() {
-                // First input instruction is always the CPU's own id.
-                id
-            } else if let Some(y) = inbound_packet_y.take() {
-                // If there's a partially-digested inbound packet, use that.
-                y
-            } else if let Ok(packet) = self_.inbound_msgs.try_recv() {
-                // Note that we unblock the CPU (possibly incrementing activity_count) _before_
-                // "consuming" the message (decrementing activity_count).
-                //
-                // This ensures the activity_count doesn't hit 0 accidentally,
-                // when the system isn't actually deadlocked.
-                self_.unblock();
-                self_.activity_count.decr(); // -1 message in flight.
-
-                // Receive a packet; save the second half for later.
-                inbound_packet_y = Some(packet.y);
-                packet.x
-            } else {
-                self_.block();
-                -1
+                return id;
             }
+
+            // If there's a partially-digested inbound packet, use that.
+            if let Some(y) = inbound_packet_y.take() {
+                return y;
+            }
+
+            let packet = if self_.num_consecutive_polls < Self::INACTIVE_THRESH {
+                // Under normal circumstances, we don't block waiting for input.
+                match self_.inbound_msgs.try_recv() {
+                    Ok(packet) => packet,
+                    _ => {
+                        self_.block();
+                        return -1;
+                    }
+                }
+            } else {
+                // As an optimization, if the current CPU is declared to be stuck,
+                // we *do* block waiting for a message, so we're not spinning and
+                // wasting cycles.
+                self_.inbound_msgs.recv().unwrap()
+            };
+
+            // Note that we unblock the CPU (possibly incrementing activity_count) _before_
+            // "consuming" the message (decrementing activity_count).
+            //
+            // This ensures the activity_count doesn't hit 0 accidentally,
+            // when the system isn't actually deadlocked.
+            self_.unblock();
+            self_.activity_count.decr(); // -1 message in flight.
+
+            // Save the second half of the packet for later.
+            inbound_packet_y = Some(packet.y);
+            packet.x
         }
     }
 
